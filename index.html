@@ -14,12 +14,12 @@
             text-align: center;
             border: 2px solid rgb(22, 9, 34);
         }
-
+        
         .canvas {
             border: 3px ridge rgb(54, 27, 82);
             border-radius: 9px;
         }
-
+        
         .scoreBord {
             display: flex;
             flex-direction: column;
@@ -31,7 +31,7 @@
             border: 2px solid rgb(54, 27, 82);
             color: rgb(85, 19, 54);
         }
-
+        
         hr {
             display: block;
             margin-top: 0.5em;
@@ -42,11 +42,11 @@
             border-width: 2px;
             width: 75%;
         }
-
+        
         .stats {
             float: right;
         }
-
+        
         .skins {
             height: 50%;
             border-style: 2 solid rgb(54, 27, 82);
@@ -104,7 +104,6 @@
         headImg.src = "./head2.jpg"
 
         let message = (x) => alert(x)
-        let score = 1
 
         let stats = document.getElementById("stats")
 
@@ -116,14 +115,14 @@
         let snake = []
 
         const resetSnake = () => {
-            snake = [
-                [0, 3],
-                [0, 2],
-                [0, 1],
-                [0, 0]
-            ]
-        }
-        //Setting Listeners 
+                snake = [
+                    [0, 3],
+                    [0, 2],
+                    [0, 1],
+                    [0, 0]
+                ]
+            }
+            //Setting Listeners 
         let skins = document.getElementById("skins");
         skins.addEventListener('change', (event) => {
             console.log(event.target.value)
@@ -145,52 +144,79 @@
 
         const keyEvent = document.addEventListener('keydown', (event) => {
             let key = event.key;
-            state.direction = [0, 0]
-            switch (key) {
-                case "ArrowUp": state.direction[1] = -1
-                    break;
-                case "ArrowDown": state.direction[1] = 1
-                    break;
-                case "ArrowLeft": state.direction[0] = -1
-                    break;
-                case "ArrowRight": state.direction[0] = 1
-                    break;
-            }
+            directionLogic(key)
         }, false)
 
-        const directionLogic = () => {
-
+        const direction = {
+            up : [0,- 1],
+            down : [0, 1],
+            left : [-1,0],
+            right : [1,0]
         }
 
+        const directionLogic = (key) => {
+            switch (key) {
+                case "ArrowUp":
+                    if(!arrayEquals(state.direction,direction.down)){
+                        console.log("UP..")
+                        state.direction = direction.up
+                    }
+                    break;
+                case "ArrowDown":
+                if(!arrayEquals(state.direction,direction.up)){
+                        console.log("DOWN..")
+                        state.direction = direction.down
+                    }
+                    break;
+                case "ArrowLeft":
+                if(!arrayEquals(state.direction,direction.right)){
+                        console.log("LEFT..")
+                        state.direction = direction.left
+                    }
+                    break;
+                case "ArrowRight":
+                if(!arrayEquals(state.direction,direction.left)){
+                        console.log("RIGHT..")
+                        state.direction = direction.right
+                    }
+                    break;
+            }
+
+            console.log(` direction: ${state.direction}`)
+        }
         const addLog = (user, score) => {
             let log = document.getElementById("log")
             var br = document.createElement("br");
-            const info = user + ", Score: " + score
+            const info = `${user}, Score: ${score}`
             log.append(info)
             log.append(br)
         }
-
         const space = []
         const calculateFreeSpace = () => {
             for (let i = 0; i <= Width / Scale; i++) {
                 for (let j = 0; j <= Height / Scale; j++) {
                     space.push([i, j])
-
                 }
             }
             let randPos = space[Math.floor(Math.random() * space.length)]
-            //testing
-            ctx.fillRect(randPos[0], randPos[1], 1, 1)
+                //testing
+            //ctx.fillRect(randPos[0], randPos[1], 1, 1)
         }
 
         const state = {
-            walls: { left: 0, right: (Width / Scale), top: 0, bottom: (Height / Scale) },
+            walls: {
+                left: 0,
+                right: (Width / Scale),
+                top: 0,
+                bottom: (Height / Scale)
+            },
             direction: [0, 1],
             food: {
                 exists: false,
                 type: "apple",
                 position: [0, 0]
-            }
+            },
+            score: 1
         }
 
         const checkIfSnakeEats = () => {
@@ -200,7 +226,7 @@
             if (head[0] === foodPos[0] && head[1] === foodPos[1]) {
                 snake.push([foodPos[0], foodPos[1]])
                 state.food.exists = false
-                document.getElementById("score").innerText = "Score: " + score++
+                document.getElementById("score").innerText = `Score: ${state.score++}`
             }
         }
 
@@ -218,7 +244,7 @@
             if (person == null || person == "") {
                 text = "User cancelled the prompt.";
             } else {
-                addLog(person, score)
+                addLog(person, state.score)
             }
         }
 
@@ -239,49 +265,54 @@
             return newhead;
         }
 
-        const gameLoop = () => {
-            now = Date.now();
-            elapsed = now - then;
-            window.requestAnimationFrame(gameLoop);
-            // if enough time has elapsed, draw the next frame
-            if (elapsed > fpsInterval) {
-                // Get ready for next frame by setting then=now, but also adjust for your
-                // specified fpsInterval not being a multiple of RAF's interval (16.7ms)
-                then = now - (elapsed % fpsInterval);
-                // Game starts here
-                frameCount = "fps:" + Math.floor(elapsed)
-                stats.innerHTML = frameCount;
-
-                if (stop) {
-                    Dialog()
-                    score = 0
-                    resetSnake()
-                    stop = false
-                }
-
-                let head = snake[0]
-                let x, y
-                [x, y] = head
-
-                let newHead = wallHitPos([x + state.direction[0], y + state.direction[1]])
-                if (!snakeEatsSelf(newHead)) {
-                    snake.unshift(newHead)
-                    snake.pop()
-                } else {
-                    stop = true
-                }
-
-                if (state.food.exists) {
-                    checkIfSnakeEats()
-                } else {
-                    state.food.position = [Math.floor(Math.random() * state.walls.right), Math.floor(Math.random() * state.walls.bottom)];
-                    state.food.exists = true
-                }
-
-                draw()
-            }
+        const showFPS = () => {
+                    
+                    // Game starts here
+                    frameCount = `fps: ${Math.floor(elapsed)}`
+                    stats.innerHTML = frameCount;
         }
-        //Graphics
+        const gameLoop = () => {
+                now = Date.now();
+                elapsed = now - then;
+                window.requestAnimationFrame(gameLoop);
+                // if enough time has elapsed, draw the next frame
+                if (elapsed > fpsInterval) {
+                   
+                    // Get ready for next frame by setting then=now, but also adjust for your
+                    // specified fpsInterval not being a multiple of RAF's interval (16.7ms)
+                    then = now - (elapsed % fpsInterval);
+                    if (stop) {
+                        Dialog()
+                        state.score = 0
+                        resetSnake()
+                        stop = false
+                    }
+
+                    showFPS()
+
+                    let head = snake[0]
+                    let x, y
+                    [x, y] = head
+
+                    let newHead = wallHitPos([x + state.direction[0], y + state.direction[1]])
+                    if (!snakeEatsSelf(newHead)) {
+                        snake.unshift(newHead)
+                        snake.pop()
+                    } else {
+                        stop = true
+                    }
+
+                    if (state.food.exists) {
+                        checkIfSnakeEats()
+                    } else {
+                        state.food.position = [Math.floor(Math.random() * state.walls.right), Math.floor(Math.random() * state.walls.bottom)];
+                        state.food.exists = true
+                    }
+
+                    draw()
+                }
+            }
+            //Graphics
         const draw = () => {
             ctx.clearRect(0, 0, Width, Height)
 
@@ -294,16 +325,14 @@
         }
 
         const startAnimating = (fps) => {
-            fpsInterval = 1000 / fps;
-            then = Date.now();
-            startTime = then;
-            resetSnake()
-            gameLoop()
-        }
-        // initialize the timer variables and start the animation
-        startAnimating(20)
-
-
+                fpsInterval = 1000 / fps;
+                then = Date.now();
+                startTime = then;
+                resetSnake()
+                gameLoop()
+            }
+            // initialize the timer variables and start the animation
+        startAnimating(30)
     </script>
 </body>
 
